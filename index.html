@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Compara proveedores, calcula precio de venta con envío e IVA y ejecuta Monte Carlo."
+    />
+    <title>Proveedor Claro · Comparador de proveedores</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="topbar" aria-label="Navegación principal">
+        <a class="brand" href="#inicio" aria-label="Ir al inicio">
+          <span class="brand-mark" aria-hidden="true">PC</span>
+          <span>Proveedor Claro</span>
+        </a>
+        <span class="status-pill"><span></span> Análisis privado en memoria</span>
+      </nav>
+
+      <div class="hero-content" id="inicio">
+        <p class="eyebrow">COMPARADOR DE COSTOS Y VENTA</p>
+        <h1>Elige un proveedor con números claros.</h1>
+        <p class="hero-copy">
+          Carga uno o varios Excel/CSV. La aplicación revisa stock, peso,
+          dimensiones, envío, comisión, margen e IVA antes de recomendar.
+        </p>
+        <div class="hero-points" aria-label="Características principales">
+          <span>Sin login para tus clientes</span>
+          <span>Archivos sin modificar</span>
+          <span>Monte Carlo incluido</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="step-card" aria-labelledby="titulo-carga">
+        <div class="step-heading">
+          <span class="step-number">1</span>
+          <div>
+            <p class="step-kicker">DATOS</p>
+            <h2 id="titulo-carga">Carga los archivos de proveedores</h2>
+          </div>
+        </div>
+
+        <label class="dropzone" for="fileInput" id="dropzone">
+          <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" multiple />
+          <span class="upload-icon" aria-hidden="true">⇧</span>
+          <strong>Selecciona o arrastra Excel y CSV</strong>
+          <span>Hasta 8 archivos y 4 MB en total</span>
+        </label>
+        <div class="file-actions">
+          <button class="button secondary" id="demoButton" type="button">
+            Usar datos de demostración
+          </button>
+          <button class="button primary" id="inspectButton" type="button" disabled>
+            Revisar columnas
+          </button>
+        </div>
+        <div id="fileList" class="file-list" aria-live="polite"></div>
+        <p class="privacy-note">
+          Los archivos se procesan temporalmente para calcular el resultado; el
+          programa no los edita ni los almacena.
+        </p>
+      </section>
+
+      <section class="step-card hidden" id="inspectionSection" aria-labelledby="titulo-columnas">
+        <div class="step-heading">
+          <span class="step-number">2</span>
+          <div>
+            <p class="step-kicker">COLUMNAS REALES</p>
+            <h2 id="titulo-columnas">Confirma lo que detectamos</h2>
+          </div>
+        </div>
+
+        <div class="mini-stats" id="inspectionStats"></div>
+        <div class="detected-list" id="detectedList"></div>
+
+        <details class="details-card">
+          <summary>Corregir asignación de columnas</summary>
+          <p>
+            Solo cambia una selección si la detección automática no corresponde
+            con el significado de tu archivo.
+          </p>
+          <div class="mapping-grid" id="mappingGrid"></div>
+        </details>
+
+        <details class="details-card">
+          <summary>Ver datos limpios</summary>
+          <div class="table-wrap" id="previewTable"></div>
+        </details>
+      </section>
+
+      <section class="step-card hidden" id="settingsSection" aria-labelledby="titulo-configuracion">
+        <div class="step-heading">
+          <span class="step-number">3</span>
+          <div>
+            <p class="step-kicker">COSTO Y VENTA</p>
+            <h2 id="titulo-configuracion">Configura la comparación</h2>
+          </div>
+        </div>
+
+        <div class="form-grid two-columns">
+          <label class="field field-wide">
+            <span>Producto que deseas comparar</span>
+            <select id="productSelect"></select>
+          </label>
+          <label class="field">
+            <span>Número de unidades</span>
+            <input id="unitsInput" type="number" min="1" step="1" value="1" />
+          </label>
+          <label class="field" id="manualWeightField">
+            <span>Peso manual del producto (kg)</span>
+            <input id="manualWeightInput" type="number" min="0" step="0.1" value="0" />
+          </label>
+        </div>
+
+        <div class="setting-group">
+          <div>
+            <h3>Envíos</h3>
+            <p>Estándar aplica hasta 20 kg; LTL se usa cuando el peso es mayor.</p>
+          </div>
+          <div class="form-grid four-columns">
+            <label class="field">
+              <span>Tarifa Estándar</span>
+              <div class="input-prefix"><b>$</b><input id="standardShipping" type="number" min="0" value="100" /></div>
+            </label>
+            <label class="field">
+              <span>Tarifa LTL</span>
+              <div class="input-prefix"><b>$</b><input id="ltlShipping" type="number" min="0" value="500" /></div>
+            </label>
+            <label class="field">
+              <span>Envío cobrado al cliente</span>
+              <div class="input-prefix"><b>$</b><input id="customerShipping" type="number" min="0" value="0" /></div>
+            </label>
+            <label class="field">
+              <span>Envío registrado en Excel</span>
+              <select id="shippingType">
+                <option value="por_pedido">Por pedido completo</option>
+                <option value="por_unidad">Por unidad</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div>
+            <h3>Precio de venta</h3>
+            <p>Los primeros tres porcentajes deben sumar menos de 100%.</p>
+          </div>
+          <div class="form-grid four-columns">
+            <label class="field"><span>Comisión plataforma</span><div class="input-suffix"><input id="commission" type="number" min="0" max="99" step="0.5" value="0" /><b>%</b></div></label>
+            <label class="field"><span>Promoción digital</span><div class="input-suffix"><input id="promotion" type="number" min="0" max="99" step="0.5" value="0" /><b>%</b></div></label>
+            <label class="field"><span>Margen de ganancia</span><div class="input-suffix"><input id="margin" type="number" min="0" max="99" step="0.5" value="0" /><b>%</b></div></label>
+            <label class="field"><span>IVA México</span><div class="input-suffix"><input id="vat" type="number" min="0" max="100" step="1" value="16" /><b>%</b></div></label>
+          </div>
+        </div>
+
+        <details class="details-card">
+          <summary>Opciones avanzadas</summary>
+          <div class="form-grid four-columns advanced-grid">
+            <label class="field"><span>Costo por volumen ($/m³)</span><input id="volumeCost" type="number" min="0" value="0" /></label>
+            <label class="field"><span>Variación de compra</span><div class="input-suffix"><input id="purchaseVariation" type="number" min="0" max="100" value="5" /><b>%</b></div></label>
+            <label class="field"><span>Variación logística</span><div class="input-suffix"><input id="logisticsVariation" type="number" min="0" max="100" value="10" /><b>%</b></div></label>
+            <label class="field"><span>Simulaciones Monte Carlo</span><input id="iterations" type="number" min="100" max="50000" step="100" value="5000" /></label>
+            <label class="field"><span>Unidad del peso</span><select id="weightUnit"><option value="kg">Kilogramos</option><option value="g">Gramos</option></select></label>
+            <label class="field"><span>Unidad de dimensiones</span><select id="dimensionUnit"><option value="cm">Centímetros</option><option value="mm">Milímetros</option><option value="m">Metros</option></select></label>
+          </div>
+        </details>
+
+        <div class="analyze-row">
+          <p>La recomendación excluye stock cero y marca si faltan datos.</p>
+          <button class="button primary large" id="analyzeButton" type="button">
+            Comparar proveedores
+          </button>
+        </div>
+      </section>
+
+      <section class="results hidden" id="resultsSection" aria-labelledby="titulo-resultados">
+        <div class="results-heading">
+          <div>
+            <p class="step-kicker">RESULTADO</p>
+            <h2 id="titulo-resultados">Proveedor recomendado</h2>
+          </div>
+          <span class="confidence" id="confidenceBadge"></span>
+        </div>
+
+        <article class="recommendation" id="recommendationCard"></article>
+        <div class="metric-grid" id="metricGrid"></div>
+
+        <section class="result-block">
+          <div class="block-heading">
+            <div>
+              <h3>Comparativa del precio según el envío</h3>
+              <p>El precio de venta se muestra antes de sumar el envío.</p>
+            </div>
+            <label class="compact-field">
+              <span>Filtrar proveedor</span>
+              <select id="providerFilter"><option value="">Todos</option></select>
+            </label>
+          </div>
+          <div class="bar-chart" id="priceChart"></div>
+          <div class="table-wrap" id="quoteTable"></div>
+        </section>
+
+        <section class="result-block">
+          <div class="block-heading">
+            <div>
+              <h3>Simulación Monte Carlo</h3>
+              <p>Probabilidad económica bajo variaciones de compra y logística.</p>
+            </div>
+          </div>
+          <div class="bar-chart probability" id="monteCarloChart"></div>
+          <div class="table-wrap" id="monteCarloTable"></div>
+        </section>
+
+        <div class="result-columns">
+          <section class="result-block compact">
+            <h3>Conclusiones</h3>
+            <ul class="conclusions" id="conclusionsList"></ul>
+          </section>
+          <section class="result-block compact">
+            <h3>Avisos de los datos</h3>
+            <ul class="warnings" id="warningsList"></ul>
+          </section>
+        </div>
+
+        <section class="download-card">
+          <div>
+            <h3>Descargar el análisis</h3>
+            <p>Obtén los datos limpios, indicadores, tablas y conclusiones.</p>
+          </div>
+          <div class="download-actions">
+            <button class="button secondary" id="downloadCsv" type="button">Descargar CSV</button>
+            <button class="button primary" id="downloadExcel" type="button">Descargar Excel</button>
+          </div>
+        </section>
+      </section>
+
+      <div class="message hidden" id="message" role="status" aria-live="polite"></div>
+      <div class="loading hidden" id="loading" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <strong id="loadingText">Analizando archivos…</strong>
+      </div>
+    </main>
+
+    <footer>
+      <p>Modelo educativo. El proveedor más barato no es automáticamente el mejor.</p>
+    </footer>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

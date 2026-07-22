@@ -1,6 +1,6 @@
-.venv/
 __pycache__/
 *.py[cod]
+.venv/
+.vercel/
 .DS_Store
-resultados/*
-!resultados/.gitkeep
+resultados/
